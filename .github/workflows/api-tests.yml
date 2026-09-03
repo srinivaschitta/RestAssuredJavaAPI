@@ -1,0 +1,44 @@
+name: API tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: API suite
+    runs-on: ubuntu-latest
+    env:
+      BOOKER_ENV: dev
+      BOOKER_BASE_URI: https://restful-booker.herokuapp.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Warm up Restful Booker
+        run: curl -fsS --retry 8 --retry-delay 5 --retry-all-errors "${BOOKER_BASE_URI}/ping"
+      - name: Run API suite
+        id: api-tests
+        run: mvn -B test
+        continue-on-error: true
+      - name: Generate Surefire HTML
+        if: always()
+        run: mvn -B surefire-report:report-only
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: |
+            target/surefire-reports
+            target/reports
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Fail when tests failed
+        if: steps.api-tests.outcome != 'success'
+        run: |
+          echo "API suite failed. This job must stay red so a required check can block the merge."
+          exit 1

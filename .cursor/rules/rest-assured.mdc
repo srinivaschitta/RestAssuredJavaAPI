@@ -1,0 +1,15 @@
+---
+description: Conventions for Restful Booker Rest Assured tests
+alwaysApply: true
+---
+
+# Rest Assured suite conventions
+
+- Framework code lives in `src/main/java`. Tests live in `src/test/java`. Config and Logback live in `src/test/resources`.
+- Use `BookerClient` (extends `BaseApiClient`) for every HTTP call, including `/auth`. Do not add per-resource clients. Do not put Rest Assured DSL in test methods.
+- Happy-path client methods return request/response POJOs after `ResponseAssert` (status, JSON) plus model-field asserts. Negatives return `Response` and one `ResponseAssert` line.
+- Each test creates its own booking via `BookingDataFactory`. Never use seed IDs 1–10. Query tests assert the created id is **in** the list.
+- Negatives stay in `AuthTests` / `BookingTests`, not a separate class.
+- Missing config → `ConfigException`. Missing id/body/token args → `IllegalArgumentException`.
+- Send `Accept: application/json` as a raw header. Do not use `ContentType.JSON` for Accept (418 teapot).
+- Assisted heal only: update POJO/assert after review. Never silently rewrite tests on failure.
